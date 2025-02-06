@@ -20,7 +20,10 @@ ELEVENLABS_VOICE_ID = "FF7KdobWPaiR0vkcALHF"  # Josh voice ID
 def analyze_image(base64_image):
     """Send image to GPT-4V for analysis"""
     try:
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url="https://api.openai.com/v1"  # Explicitly set base URL
+        )
         print("OpenAI client initialized")  # Debug log
         
         response = client.chat.completions.create(
