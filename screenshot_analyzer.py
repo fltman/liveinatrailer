@@ -1,4 +1,4 @@
-import pyautogui
+from PIL import ImageGrab
 import base64
 import requests
 import time
@@ -20,35 +20,15 @@ ELEVENLABS_VOICE_ID = "FF7KdobWPaiR0vkcALHF"  # Josh voice ID
 
 def take_screenshot():
     """Capture screenshot and convert to base64"""
-    try:
-        # For macOS, use screencapture command
-        import subprocess
+    screenshots_dir = 'screenshots'
+    if not os.path.exists(screenshots_dir):
+        os.makedirs(screenshots_dir)
         
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        screenshots_dir = 'screenshots'
-        if not os.path.exists(screenshots_dir):
-            os.makedirs(screenshots_dir)
-            
-        screenshot_path = os.path.join(screenshots_dir, f'screenshot_{timestamp}.png')
-        
-        # Use screencapture command
-        subprocess.run(['screencapture', '-x', screenshot_path], check=True)
-        
-        # Open the saved screenshot
-        im = Image.open(screenshot_path)
-        
-    except (ImportError, subprocess.SubprocessError):
-        # Fallback to pyautogui for other operating systems
-        im = pyautogui.screenshot()
-        
-        # Save the screenshot
-        screenshots_dir = 'screenshots'
-        if not os.path.exists(screenshots_dir):
-            os.makedirs(screenshots_dir)
-            
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        screenshot_path = os.path.join(screenshots_dir, f'screenshot_{timestamp}.png')
-        im.save(screenshot_path)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    screenshot_path = os.path.join(screenshots_dir, f'screenshot_{timestamp}.png')
+    
+    im = ImageGrab.grab()
+    im.save(screenshot_path)
     
     print(f"Screenshot saved to: {screenshot_path}")
     
