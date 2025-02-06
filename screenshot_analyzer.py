@@ -30,8 +30,16 @@ def take_screenshot():
         
         im = ImageGrab.grab()
         im.save(screenshot_path)
-    
-    print(f"Screenshot saved to: {screenshot_path}")
+        
+        print(f"Screenshot saved to: {screenshot_path}")
+        
+        # Convert to base64
+        buffered = BytesIO()
+        im.save(buffered, format="PNG")
+        return base64.b64encode(buffered.getvalue()).decode('utf-8')
+    except Exception as e:
+        print(f"Error taking screenshot: {e}")
+        return None
     
     # Convert to base64
     buffered = BytesIO()
