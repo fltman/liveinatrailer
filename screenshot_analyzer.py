@@ -20,15 +20,16 @@ ELEVENLABS_VOICE_ID = "FF7KdobWPaiR0vkcALHF"  # Josh voice ID
 
 def take_screenshot():
     """Capture screenshot and convert to base64"""
-    screenshots_dir = 'screenshots'
-    if not os.path.exists(screenshots_dir):
-        os.makedirs(screenshots_dir)
+    try:
+        screenshots_dir = 'screenshots'
+        if not os.path.exists(screenshots_dir):
+            os.makedirs(screenshots_dir)
+            
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_path = os.path.join(screenshots_dir, f'screenshot_{timestamp}.png')
         
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    screenshot_path = os.path.join(screenshots_dir, f'screenshot_{timestamp}.png')
-    
-    im = ImageGrab.grab()
-    im.save(screenshot_path)
+        im = ImageGrab.grab()
+        im.save(screenshot_path)
     
     print(f"Screenshot saved to: {screenshot_path}")
     
@@ -42,7 +43,7 @@ def analyze_image(base64_image):
     client = OpenAI(api_key=OPENAI_API_KEY)
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4-vision-preview",
         messages=[
             {
                 "role": "system",
