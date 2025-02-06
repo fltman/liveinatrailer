@@ -22,7 +22,7 @@ def analyze_image(base64_image):
     client = OpenAI(api_key=OPENAI_API_KEY)
     
     response = client.chat.completions.create(
-        model="gpt-4-vision-preview",
+        model="gpt-4o",
         messages=[
             {
                 "role": "system",
@@ -59,7 +59,7 @@ def get_audio(text):
     }
     data = {
         "text": text,
-        "model_id": "eleven_flash_v2_5",
+        "model_id": "eleven_turbo_v2_5",
         "voice_settings": {
             "stability": 0.3,
             "similarity_boost": 0.95,
