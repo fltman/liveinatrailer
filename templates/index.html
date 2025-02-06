@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Camera Analyzer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        #video {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+        }
+        
+        #result {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            min-height: 50px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        
+        .recording {
+            background-color: #dc3545 !important;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <button id="toggleCapture">Start Continuous Capture</button>
+    <div id="result">Results will appear here...</div>
+    <audio id="audio" controls style="width: 100%; display: none;"></audio>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const toggleButton = document.getElementById('toggleCapture');
+        const resultDiv = document.getElementById('result');
+        const audioElement = document.getElementById('audio');
+        let isCapturing = false;
+        let captureInterval = null;
+        
+        // Access the camera
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                resultDiv.textContent = 'Error accessing camera. Please make sure you have granted camera permissions.';
+            }
+        }
+
+        // Take photo and analyze
+        async function captureAndAnalyze() {
+            if (!isCapturing) return;
+            
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get base64 image data
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.textContent = data.analysis;
+                    
+                    // Play audio
+                    const audioBlob = new Blob(
+                        [Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))],
+                        { type: 'audio/mpeg' }
+                    );
+                    audioElement.src = URL.createObjectURL(audioBlob);
+                    audioElement.style.display = 'block';
+                    audioElement.play();
+                } else {
+                    resultDiv.textContent = 'Error: ' + data.error;
+                }
+            } catch (err) {
+                resultDiv.textContent = 'Error analyzing image: ' + err.message;
+                stopCapture();
+            }
+        }
+
+        function startCapture() {
+            isCapturing = true;
+            toggleButton.textContent = 'Stop Capturing';
+            toggleButton.classList.add('recording');
+            // Start continuous capture every 5 seconds
+            captureInterval = setInterval(captureAndAnalyze, 5000);
+            // Trigger first capture immediately
+            captureAndAnalyze();
+        }
+
+        function stopCapture() {
+            isCapturing = false;
+            toggleButton.textContent = 'Start Continuous Capture';
+            toggleButton.classList.remove('recording');
+            if (captureInterval) {
+                clearInterval(captureInterval);
+                captureInterval = null;
+            }
+        }
+
+        // Toggle capture on button click
+        toggleButton.addEventListener('click', () => {
+            if (isCapturing) {
+                stopCapture();
+            } else {
+                startCapture();
+            }
+        });
+
+        // Wait for audio to finish before next capture
+        audioElement.addEventListener('ended', () => {
+            if (isCapturing) {
+                // Wait 1 second after audio ends before next capture
+                setTimeout(captureAndAnalyze, 1000);
+            }
+        });
+
+        // Initialize camera when page loads
+        initCamera();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopCapture();
+        });
+    </script>
+</body>
+</html> 
